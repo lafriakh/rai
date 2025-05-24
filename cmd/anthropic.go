@@ -1,0 +1,74 @@
+package cmd
+
+import (
+	"ai/internal"
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/google/uuid"
+	"github.com/spf13/cobra"
+)
+
+func NewAnthropicCmd(config internal.Config) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "anthropic",
+		Short: "Interact with the Anthropic AI models",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Anthropic")
+
+			ctx := context.Background()
+			client := newAnthropicClient(cmd, config)
+
+			scanner := internal.NewScanner(os.Stdin)
+			agent := internal.NewAgent(scanner)
+			agent.Chat(func(message internal.Message, conversation *internal.Conversation) (internal.Message, error) {
+				response, err := client.Messages.New(ctx, anthropic.MessageNewParams{
+					Model:     anthropic.Model(cmd.Flag("model").Value.String()),
+					Messages:  append([]anthropic.MessageParam{}, append(conversation.ToClaude(), message.ToClaude())...),
+					MaxTokens: int64(1024),
+					System: []anthropic.TextBlockParam{
+						{Text: agent.SystemPrompt(cmd.Flag("system").Value.String())},
+					},
+				})
+				if err != nil {
+					return internal.Message{}, err
+				}
+
+				return internal.Message{
+					ID:      uuid.NewString(),
+					Role:    internal.RoleModel,
+					Content: anthropicMessageToText(response.Content),
+				}, nil
+			})
+		},
+	}
+
+	cmd.Flags().String("model", config.Anthropic.ModelID, "Model to use (e.g., Claude3.7 Sonnet)")
+	cmd.Flags().String("key", "", "API key for the AI provider")
+	cmd.Flags().String("system", config.Anthropic.SystemPromptPath, "Path to the system prompt file to use")
+
+	return cmd
+}
+
+func newAnthropicClient(cmd *cobra.Command, config internal.Config) anthropic.Client {
+	key := cmd.Flag("key").Value.String()
+	if key == "" {
+		key = config.Anthropic.APIKey
+	}
+
+	return anthropic.NewClient(option.WithAPIKey(key))
+}
+
+func anthropicMessageToText(content []anthropic.ContentBlockUnion) string {
+	for _, content := range content {
+		switch content.Type {
+		case "text":
+			return content.Text
+		}
+	}
+
+	return ""
+}
