@@ -17,7 +17,7 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 		Use:   "gemini",
 		Short: "Interact with the Gemini AI models",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Gemini")
+			fmt.Printf("Gemini (%s)\n", config.Gemini.ModelID)
 
 			ctx := context.Background()
 			client, err := newGeminiClient(ctx, cmd, config)

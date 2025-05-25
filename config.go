@@ -6,12 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
 
 const (
-	defaultConfigPath = "$HOME/.config/ai/config.yaml"
+	defaultConfigPath = "$HOME/.config/rai/config.yaml"
 )
 
 //go:embed config.yaml
@@ -24,7 +25,7 @@ func initConfig() internal.Config {
 	
 	v := viper.NewWithOptions(viper.ExperimentalBindStruct())
 
-	v.AddConfigPath("$HOME/.config/ai")
+	v.AddConfigPath("$HOME/.config/rai")
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 
@@ -39,10 +40,11 @@ func initConfig() internal.Config {
 }
 
 func ensureConfig() {
-	filepath := os.ExpandEnv(defaultConfigPath)
+	fpath := os.ExpandEnv(defaultConfigPath)
 
-	if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
-		if err = os.WriteFile(filepath, []byte(defaultConfig), os.FileMode(0o644)); err != nil {
+	if _, err := os.Stat(fpath); errors.Is(err, os.ErrNotExist) {
+		makeDirectoryIfNotExists(filepath.Dir(fpath))
+		if err = os.WriteFile(fpath, []byte(defaultConfig), os.FileMode(0o644)); err != nil {
 			fmt.Println("Can't write config:", err)
 			os.Exit(1)
 		}

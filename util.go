@@ -15,3 +15,10 @@ func userHomeDir() string {
 	}
 	return os.Getenv("HOME")
 }
+
+func makeDirectoryIfNotExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return os.MkdirAll(path, os.ModeDir|0755)
+	}
+	return nil
+}

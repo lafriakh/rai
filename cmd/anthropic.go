@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -17,7 +18,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 		Use:   "anthropic",
 		Short: "Interact with the Anthropic AI models",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Anthropic")
+			fmt.Printf("Anthropic (%s) \n", config.Anthropic.ModelID)
 
 			ctx := context.Background()
 			client := newAnthropicClient(cmd, config)
@@ -28,7 +29,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 				response, err := client.Messages.New(ctx, anthropic.MessageNewParams{
 					Model:     anthropic.Model(cmd.Flag("model").Value.String()),
 					Messages:  append([]anthropic.MessageParam{}, append(conversation.ToClaude(), message.ToClaude())...),
-					MaxTokens: int64(1024),
+					MaxTokens: int64(8192),
 					System: []anthropic.TextBlockParam{
 						{Text: agent.SystemPrompt(cmd.Flag("system").Value.String())},
 					},
@@ -63,12 +64,13 @@ func newAnthropicClient(cmd *cobra.Command, config internal.Config) anthropic.Cl
 }
 
 func anthropicMessageToText(content []anthropic.ContentBlockUnion) string {
+	var res strings.Builder
 	for _, content := range content {
 		switch content.Type {
 		case "text":
-			return content.Text
+			res.WriteString(content.Text)
 		}
 	}
 
-	return ""
+	return res.String()
 }
