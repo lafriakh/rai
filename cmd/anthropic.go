@@ -17,6 +17,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "anthropic",
 		Short: "Interact with the Anthropic AI models",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Anthropic (%s) \n", config.Anthropic.ModelID)
 
@@ -33,7 +34,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			agent.Chat(func(message *internal.Message, conversation *internal.Conversation) (*internal.Message, error) {
+			errr := agent.Chat(func(message *internal.Message, conversation *internal.Conversation) (*internal.Message, error) {
 				response, err := client.Messages.New(ctx, anthropic.MessageNewParams{
 					Model:     anthropic.Model(cmd.Flag("model").Value.String()),
 					Messages:  append([]anthropic.MessageParam{}, append(conversation.ToClaude(), message.ToClaude())...),
@@ -52,7 +53,8 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 					Content: anthropicMessageToText(response.Content),
 				}, nil
 			})
-			return nil
+			
+			return errr
 		},
 	}
 

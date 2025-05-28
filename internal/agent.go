@@ -40,7 +40,7 @@ func NewAgent(scanner *Scanner, conversationName string) (*Agent, error) {
 
 func (a *Agent) Chat(handler func(message *Message, conversation *Conversation) (*Message, error)) error {
 	fmt.Print("> ")
-	a.scanner.Scan(func(input string) error {
+	err := a.scanner.Scan(func(input string) error {
 		// User message
 		message := &Message{
 			ID:      uuid.NewString(),
@@ -53,7 +53,6 @@ func (a *Agent) Chat(handler func(message *Message, conversation *Conversation) 
 		// AI response
 		response, err := handler(message, a.conversation)
 		if err != nil {
-			fmt.Println("Error:", err)
 			return err
 		}
 
@@ -73,10 +72,16 @@ func (a *Agent) Chat(handler func(message *Message, conversation *Conversation) 
 
 		return nil
 	})
-	
-	if err := a.storage.Close(); err != nil {
+	if err != nil {
 		return err
 	}
+
+	if a.storage != nil {
+		if err := a.storage.Close(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

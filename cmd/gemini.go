@@ -16,6 +16,7 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gemini",
 		Short: "Interact with the Gemini AI models",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Gemini (%s)\n", config.Gemini.ModelID)
 
@@ -31,7 +32,7 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 				return err
 			}
 
-			agent.Chat(func(message *internal.Message, conversation *internal.Conversation) (*internal.Message, error) {
+			return agent.Chat(func(message *internal.Message, conversation *internal.Conversation) (*internal.Message, error) {
 				config, err := generateContentConfig(agent, cmd.Flag("system").Value.String())
 				if err != nil {
 					return nil, err
@@ -53,8 +54,6 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 					Content: response.Text(),
 				}, nil
 			})
-
-			return nil
 		},
 	}
 

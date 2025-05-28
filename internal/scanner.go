@@ -14,7 +14,7 @@ func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{scanner: bufio.NewScanner(r)}
 }
 
-func (s *Scanner) Scan(f func(input string) error) {
+func (s *Scanner) Scan(f func(input string) error) error {
 	for {
 		if !s.scanner.Scan() {
 			break
@@ -34,7 +34,8 @@ func (s *Scanner) Scan(f func(input string) error) {
 		}
 
 		if err := f(input); err != nil {
-			break
+			return err
 		}
 	}
+	return nil
 }
