@@ -1,6 +1,10 @@
 package internal
 
-import "github.com/charmbracelet/glamour"
+import (
+	"fmt"
+
+	"github.com/charmbracelet/glamour"
+)
 
 func RenderMarkdown(content string) string {
 	r, _ := glamour.NewTermRenderer(
@@ -10,7 +14,7 @@ func RenderMarkdown(content string) string {
 
 	data, err := r.Render(content)
 	if err != nil {
-		panic(err)
+		fmt.Printf("Failed to render markdown: %v\n", err)
 	}
 	return data
 }

@@ -85,7 +85,7 @@ func (c *Storage) ReadHeader() (Header, error) {
 
 // AddMessage will add a message to the conversation
 // Format: [Length] [Encoded Message]
-func (c *Storage) AddMessage(message Message) error {
+func (c *Storage) AddMessage(message *Message) error {
 	header, err := c.ReadHeader()
 	if err != nil {
 		return fmt.Errorf("failed to read header: %w", err)

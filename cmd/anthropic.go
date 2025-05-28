@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"rai/internal"
 	"context"
 	"fmt"
 	"os"
+	"rai/internal"
 	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
@@ -17,33 +17,42 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "anthropic",
 		Short: "Interact with the Anthropic AI models",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Anthropic (%s) \n", config.Anthropic.ModelID)
 
 			ctx := context.Background()
 			client := newAnthropicClient(cmd, config)
 
 			scanner := internal.NewScanner(os.Stdin)
-			agent := internal.NewAgent(scanner, cmd.Flag("conversation").Value.String())
-			agent.Chat(func(message internal.Message, conversation *internal.Conversation) (internal.Message, error) {
+			agent, err := internal.NewAgent(scanner, cmd.Flag("conversation").Value.String())
+			if err != nil {
+				return err
+			}
+
+			systemPrompt, err := agent.SystemPrompt(cmd.Flag("system").Value.String())
+			if err != nil {
+				return err
+			}
+			agent.Chat(func(message *internal.Message, conversation *internal.Conversation) (*internal.Message, error) {
 				response, err := client.Messages.New(ctx, anthropic.MessageNewParams{
 					Model:     anthropic.Model(cmd.Flag("model").Value.String()),
 					Messages:  append([]anthropic.MessageParam{}, append(conversation.ToClaude(), message.ToClaude())...),
 					MaxTokens: int64(8192),
 					System: []anthropic.TextBlockParam{
-						{Text: agent.SystemPrompt(cmd.Flag("system").Value.String())},
+						{Text: systemPrompt},
 					},
 				})
 				if err != nil {
-					return internal.Message{}, err
+					return nil, err
 				}
 
-				return internal.Message{
+				return &internal.Message{
 					ID:      uuid.NewString(),
 					Role:    internal.RoleModel,
 					Content: anthropicMessageToText(response.Content),
 				}, nil
 			})
+			return nil
 		},
 	}
 

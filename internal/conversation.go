@@ -9,7 +9,7 @@ import (
 
 type Conversation struct {
 	Name      *string   `json:"name,omitempty"`
-	Messages  []Message `json:"message"`
+	Messages  []*Message `json:"message"`
 	CreatedAt time.Time `json:"created_at"`
 }
 

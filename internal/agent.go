@@ -16,12 +16,12 @@ type Agent struct {
 	scanner      *Scanner
 }
 
-func NewAgent(scanner *Scanner, conversationName string) *Agent {
+func NewAgent(scanner *Scanner, conversationName string) (*Agent, error) {
 	var storage *Storage
 	if conversationName != "" {
 		s, err := NewStorage(fmt.Sprintf("%s.chat", conversationName))
 		if err != nil {
-			panic(fmt.Errorf("failed to create storage: %w", err))
+			return nil, fmt.Errorf("failed to create storage: %w", err)
 		}
 		storage = s
 	}
@@ -29,20 +29,20 @@ func NewAgent(scanner *Scanner, conversationName string) *Agent {
 	agent := &Agent{
 		conversation: &Conversation{
 			Name:     &conversationName,
-			Messages: []Message{},
+			Messages: []*Message{},
 		},
 		scanner: scanner,
 		storage: storage,
 	}
 
-	return agent
+	return agent, nil
 }
 
-func (a *Agent) Chat(handler func(message Message, conversation *Conversation) (Message, error)) {
+func (a *Agent) Chat(handler func(message *Message, conversation *Conversation) (*Message, error)) error {
 	fmt.Print("> ")
 	a.scanner.Scan(func(input string) error {
 		// User message
-		message := Message{
+		message := &Message{
 			ID:      uuid.NewString(),
 			Role:    RoleUser,
 			Content: input,
@@ -61,10 +61,10 @@ func (a *Agent) Chat(handler func(message Message, conversation *Conversation) (
 		a.conversation.Messages = append(a.conversation.Messages, message, response)
 		if a.storage != nil {
 			if err := a.storage.AddMessage(message); err != nil {
-				panic(err)
+				return err
 			}
 			if err := a.storage.AddMessage(response); err != nil {
-				panic(err)
+				return err
 			}
 		}
 
@@ -75,26 +75,27 @@ func (a *Agent) Chat(handler func(message Message, conversation *Conversation) (
 	})
 	
 	if err := a.storage.Close(); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
-func (a *Agent) SystemPrompt(name string) string {
+func (a *Agent) SystemPrompt(name string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err == nil && strings.HasPrefix(name, "~") {
 		name = filepath.Join(home, name[1:])
 	}
 
 	if _, err := os.Stat(name); errors.Is(err, os.ErrNotExist) {
-		panic("system prompt file does not exist" + name)
+		return "", fmt.Errorf("system prompt file does not exist", name)
 	}
 
 	data, err := os.ReadFile(name)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return string(data)
+	return string(data), nil
 }
 
 func addPrefixToEachLine(input string, prefix string) string {
