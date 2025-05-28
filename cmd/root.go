@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"ai/internal"
 	"fmt"
 	"os"
+	"rai/internal"
 	"strings"
 
 	"github.com/spf13/cobra"

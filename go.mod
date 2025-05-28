@@ -1,4 +1,4 @@
-module ai
+module rai
 
 go 1.24.3
 

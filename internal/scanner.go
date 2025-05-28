@@ -3,6 +3,7 @@ package internal
 import (
 	"bufio"
 	"io"
+	"strings"
 )
 
 type Scanner struct {
@@ -22,6 +23,14 @@ func (s *Scanner) Scan(f func(input string) error) {
 		input := s.scanner.Text()
 		if input == "" {
 			continue
+		}
+		if strings.HasSuffix(input, "/vim") {
+			withoutSuffix, _ := strings.CutSuffix(input, "/vim")
+			vimOutput, err := EditStringInVim(withoutSuffix)
+			if err != nil {
+				continue
+			}
+			input = vimOutput
 		}
 
 		if err := f(input); err != nil {

@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"ai/internal"
+	"rai/internal"
 	"context"
 	"fmt"
 	"os"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"google.golang.org/genai"
 )
 
@@ -26,9 +25,9 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 			}
 
 			scanner := internal.NewScanner(os.Stdin)
-			agent := internal.NewAgent(scanner)
+			agent := internal.NewAgent(scanner, cmd.Flag("conversation").Value.String())
 			agent.Chat(func(message internal.Message, conversation *internal.Conversation) (internal.Message, error) {
-				config := generateContentConfig(agent.SystemPrompt(cmd.Flag("system").Value.String()))
+				config := generateContentConfig(agent, cmd.Flag("system").Value.String())
 				chat, err := client.Chats.Create(ctx, cmd.Flag("model").Value.String(), config, conversation.ToGemini())
 				if err != nil {
 					return internal.Message{}, err
@@ -51,6 +50,7 @@ func NewGeminiCmd(config internal.Config) *cobra.Command {
 	cmd.Flags().String("model", config.Gemini.ModelID, "Model to use (e.g., gemini-2.5-pro-preview-05-06)")
 	cmd.Flags().String("key", "", "API key for the AI provider")
 	cmd.Flags().String("system", config.Gemini.SystemPromptPath, "Path to the system prompt file to use")
+	cmd.Flags().String("conversation", "", "conversation name to store the chat and load messages from")
 	cmd.Flags().Lookup("key").NoOptDefVal = ""
 
 	return cmd
@@ -68,10 +68,11 @@ func newGeminiClient(ctx context.Context, cmd *cobra.Command, config internal.Co
 	})
 }
 
-func generateContentConfig(systemInstruction string) *genai.GenerateContentConfig {
-	if viper.GetString("gemini.system") == "" {
+func generateContentConfig(agent *internal.Agent, systemPromptPath string) *genai.GenerateContentConfig {
+	if systemPromptPath == "" {
 		return nil
 	}
+	systemInstruction := agent.SystemPrompt(systemPromptPath)
 
 	return &genai.GenerateContentConfig{
 		SystemInstruction: &genai.Content{

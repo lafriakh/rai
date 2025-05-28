@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"ai/internal"
+	"rai/internal"
 	"context"
 	"fmt"
 	"os"
@@ -24,7 +24,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 			client := newAnthropicClient(cmd, config)
 
 			scanner := internal.NewScanner(os.Stdin)
-			agent := internal.NewAgent(scanner)
+			agent := internal.NewAgent(scanner, cmd.Flag("conversation").Value.String())
 			agent.Chat(func(message internal.Message, conversation *internal.Conversation) (internal.Message, error) {
 				response, err := client.Messages.New(ctx, anthropic.MessageNewParams{
 					Model:     anthropic.Model(cmd.Flag("model").Value.String()),
@@ -50,6 +50,7 @@ func NewAnthropicCmd(config internal.Config) *cobra.Command {
 	cmd.Flags().String("model", config.Anthropic.ModelID, "Model to use (e.g., Claude3.7 Sonnet)")
 	cmd.Flags().String("key", "", "API key for the AI provider")
 	cmd.Flags().String("system", config.Anthropic.SystemPromptPath, "Path to the system prompt file to use")
+	cmd.Flags().String("conversation", "", "conversation name to store the chat and load messages from")
 
 	return cmd
 }

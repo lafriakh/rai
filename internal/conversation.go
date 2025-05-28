@@ -1,13 +1,14 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/anthropics/anthropic-sdk-go"
 	"google.golang.org/genai"
-	"time"
 )
 
 type Conversation struct {
-	ID        string    `json:"id"`
+	Name      *string   `json:"name,omitempty"`
 	Messages  []Message `json:"message"`
 	CreatedAt time.Time `json:"created_at"`
 }
@@ -40,9 +41,9 @@ func (c *Conversation) ToClaude() []anthropic.MessageParam {
 
 type Message struct {
 	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
 	Role      Role      `json:"role"`
 	Content   string    `json:"content"`
-	CreatedAt time.Time `json:"created_at"`
 }
 
 func (m *Message) ToGemini() *genai.Part {

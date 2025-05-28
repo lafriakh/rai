@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ai/cmd"
+	"rai/cmd"
 )
 
 func main() {

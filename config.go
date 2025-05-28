@@ -1,7 +1,7 @@
 package main
 
 import (
-	"ai/internal"
+	"rai/internal"
 	_ "embed"
 	"errors"
 	"fmt"
